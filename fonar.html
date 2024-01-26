@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Фонарик</title>
+  </head>
+  <body>
+    <button id="toggleFlashlight">Включить фонарик</button>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Проверяем, поддерживает ли устройство API для камеры
+        if ("torch" in navigator) {
+          const toggleButton = document.getElementById("toggleFlashlight");
+
+          // Функция для включения/выключения фонарика
+          const toggleFlashlight = async () => {
+            try {
+              // Получаем текущее состояние фонарика
+              const flashlightEnabled = await navigator.torch.isTorchOn();
+
+              // Включаем или выключаем фонарик в зависимости от текущего состояния
+              if (flashlightEnabled) {
+                await navigator.torch.turnOff();
+                toggleButton.textContent = "Включить фонарик";
+              } else {
+                await navigator.torch.turnOn();
+                toggleButton.textContent = "Выключить фонарик";
+              }
+            } catch (error) {
+              console.error("Ошибка при работе с фонариком:", error);
+            }
+          };
+
+          // Назначаем обработчик события для кнопки
+          toggleButton.addEventListener("click", toggleFlashlight);
+        } else {
+          // Если устройство не поддерживает API для камеры
+          console.error("Ваше устройство не поддерживает API для фонарика.");
+        }
+      });
+    </script>
+  </body>
+</html>
