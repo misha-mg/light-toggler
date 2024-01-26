@@ -6,40 +6,59 @@
     <title>Фонарик</title>
   </head>
   <body>
-    <button id="toggleFlashlight">Включить фонарик</button>
+    <button class="switch">On / Off</button>
+
+    0.1
 
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        // Проверяем, поддерживает ли устройство API для камеры
-        if ("torch" in navigator) {
-          const toggleButton = document.getElementById("toggleFlashlight");
+      //Test browser support
+      const SUPPORTS_MEDIA_DEVICES = "mediaDevices" in navigator;
 
-          // Функция для включения/выключения фонарика
-          const toggleFlashlight = async () => {
-            try {
-              // Получаем текущее состояние фонарика
-              const flashlightEnabled = await navigator.torch.isTorchOn();
+      if (SUPPORTS_MEDIA_DEVICES) {
+        //Get the environment camera (usually the second one)
+        navigator.mediaDevices.enumerateDevices().then((devices) => {
+          const cameras = devices.filter(
+            (device) => device.kind === "videoinput"
+          );
 
-              // Включаем или выключаем фонарик в зависимости от текущего состояния
-              if (flashlightEnabled) {
-                await navigator.torch.turnOff();
-                toggleButton.textContent = "Включить фонарик";
-              } else {
-                await navigator.torch.turnOn();
-                toggleButton.textContent = "Выключить фонарик";
-              }
-            } catch (error) {
-              console.error("Ошибка при работе с фонариком:", error);
-            }
-          };
+          if (cameras.length === 0) {
+            throw "No camera found on this device.";
+          }
+          const camera = cameras[cameras.length - 1];
 
-          // Назначаем обработчик события для кнопки
-          toggleButton.addEventListener("click", toggleFlashlight);
-        } else {
-          // Если устройство не поддерживает API для камеры
-          console.error("Ваше устройство не поддерживает API для фонарика.");
-        }
-      });
+          // Create stream and get video track
+          navigator.mediaDevices
+            .getUserMedia({
+              video: {
+                deviceId: camera.deviceId,
+                facingMode: ["user", "environment"],
+                height: { ideal: 1080 },
+                width: { ideal: 1920 },
+              },
+            })
+            .then((stream) => {
+              const track = stream.getVideoTracks()[0];
+
+              //Create image capture object and get camera capabilities
+              const imageCapture = new ImageCapture(track);
+              const photoCapabilities = imageCapture
+                .getPhotoCapabilities()
+                .then(() => {
+                  //todo: check if camera has a torch
+
+                  //let there be light!
+                  const btn = document.querySelector(".switch");
+                  btn.addEventListener("click", function () {
+                    track.applyConstraints({
+                      advanced: [{ torch: true }],
+                    });
+                  });
+                });
+            });
+        });
+
+        //The light will be on as long the track exists
+      }
     </script>
   </body>
 </html>
